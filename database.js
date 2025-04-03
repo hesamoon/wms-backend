@@ -178,6 +178,15 @@ export async function updateProduct(
   return getProduct(product_code);
 }
 
+export async function removeProduct(product_code) {
+  const [result] = await pool.query(
+    `DELETE FROM product WHERE product_code=?`,
+    [product_code]
+  );
+
+  return { ...result, product_code };
+}
+
 export async function getSoldProducts() {
   const [rows] = await pool.query(`SELECT * FROM sold_product`);
   return rows;
@@ -239,6 +248,55 @@ export async function sellProduct(
 export async function getUsers() {
   const [rows] = await pool.query(`SELECT * FROM users`);
   return rows;
+}
+
+export async function addUser(name, number, password, user_code, role) {
+  const [result] = await pool.query(
+    `
+    INSERT INTO
+        users (
+          name,
+          number,
+          password,
+          user_code,
+          role
+        )
+    VALUES (
+      ?, ?, ?, ?, ?
+    )
+  `,
+    [name, number, password, user_code, role]
+  );
+
+  return result;
+}
+
+export async function updateUser(name, number, password, user_code, role) {
+  const [result] = await pool.query(
+    `
+    UPDATE users
+    SET 
+      name = ?,
+      number = ?,
+      password = ?,
+      user_code = ?,
+      role = ?
+    WHERE 
+      user_code = ? AND 
+      number = ?;
+  `,
+    [name, number, password, user_code, role, user_code, number]
+  );
+  return getUser(number, password);
+}
+
+export async function removeUser(number, user_code) {
+  const [result] = await pool.query(
+    `DELETE FROM users WHERE number=? AND user_code=?`,
+    [number, user_code]
+  );
+
+  return { ...result, user_code };
 }
 
 export async function getUser(number, password) {

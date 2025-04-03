@@ -13,6 +13,10 @@ import {
   sellProduct,
   getUsers,
   getUser,
+  removeProduct,
+  addUser,
+  updateUser,
+  removeUser,
 } from "./database.js";
 
 const app = express();
@@ -50,9 +54,36 @@ app.get("/getUsers", async (req, res) => {
   res.send(users);
 });
 
+app.post("/addUser", async (req, res) => {
+  const { name, number, password, user_code, role } = req.body;
+  const newUser = await addUser(name, number, password, user_code, role);
+  res.status(201).send(newUser);
+});
+
+app.post("/updateUser", async (req, res) => {
+  const { name, number, password, user_code, role } = req.body;
+
+  const updatedUser = await updateUser(name, number, password, user_code, role);
+  res.status(201).send(updatedUser);
+});
+
+app.post("/removeUser", async (req, res) => {
+  const { number, user_code } = req.body;
+
+  const removedUser = await removeUser(number, user_code);
+  res.status(201).send(removedUser);
+});
+
 app.post("/createProduct", async (req, res) => {
-  const { warehouseCode, productCode, productName, qty, buyPrice, sellPrice, seller } =
-    req.body;
+  const {
+    warehouseCode,
+    productCode,
+    productName,
+    qty,
+    buyPrice,
+    sellPrice,
+    seller,
+  } = req.body;
 
   const newProduct = await createProduct(
     warehouseCode,
@@ -96,6 +127,14 @@ app.post("/updateProduct", async (req, res) => {
   );
 
   res.status(201).send(updatedProduct);
+});
+
+app.post("/removeProduct", async (req, res) => {
+  const { product_code } = req.body;
+
+  const removedProduct = await removeProduct(product_code);
+
+  res.status(200).send(removedProduct);
 });
 
 app.post("/sellProduct", async (req, res) => {
