@@ -17,6 +17,8 @@ import {
   addUser,
   updateUser,
   removeUser,
+  addBuyer,
+  getBuyers,
 } from "./database.js";
 
 const app = express();
@@ -60,6 +62,17 @@ app.post("/addUser", async (req, res) => {
   res.status(201).send(newUser);
 });
 
+app.post("/addBuyer", async (req, res) => {
+  const { name, number, address, type } = req.body;
+  const newBuyer = await addBuyer(name, number, address, type);
+  res.status(201).send(newBuyer);
+});
+
+app.get("/getBuyers", async (req, res) => {
+  const users = await getBuyers();
+  res.send(users);
+});
+
 app.post("/updateUser", async (req, res) => {
   const { name, number, password, user_code, role } = req.body;
 
@@ -79,6 +92,9 @@ app.post("/createProduct", async (req, res) => {
     warehouseCode,
     productCode,
     productName,
+    productCategory,
+    productUnit,
+    minQty,
     qty,
     buyPrice,
     sellPrice,
@@ -89,6 +105,9 @@ app.post("/createProduct", async (req, res) => {
     warehouseCode,
     productCode,
     productName,
+    productCategory,
+    productUnit,
+    minQty,
     qty,
     buyPrice,
     sellPrice,
@@ -142,20 +161,26 @@ app.post("/sellProduct", async (req, res) => {
     warehouse_code,
     product_code,
     product_name,
+    product_unit,
     buy_price,
     sell_price,
     seller,
+    buyer,
     count,
+    min_count,
   } = req.body;
 
   const sellProductRes = await sellProduct(
     warehouse_code,
     product_code,
     product_name,
+    product_unit,
     buy_price,
     sell_price,
     seller,
+    buyer,
     count,
+    min_count,
     new Date(),
     new Date(),
     new Date()

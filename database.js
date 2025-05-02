@@ -25,9 +25,12 @@ export async function initializeDatabase() {
           warehouse_code VARCHAR(50) NOT NULL,
           product_code VARCHAR(50) NOT NULL,
           product_name VARCHAR(50) NOT NULL,
+          product_category JSON,
+          product_unit VARCHAR(50) NOT NULL,
           buy_price VARCHAR(50) NOT NULL,
           sell_price VARCHAR(50) NOT NULL,
           seller JSON,
+          min_count INT NOT NULL,
           count INT NOT NULL,
           createAt TIMESTAMP NOT NULL DEFAULT NOW(),
           updateAt TIMESTAMP NOT NULL DEFAULT NOW()
@@ -43,9 +46,13 @@ export async function initializeDatabase() {
           warehouse_code VARCHAR(50) NOT NULL,
           product_code VARCHAR(50) NOT NULL,
           product_name VARCHAR(50) NOT NULL,
+          product_category JSON,
+          product_unit VARCHAR(50) NOT NULL,
           buy_price VARCHAR(50) NOT NULL,
           sell_price VARCHAR(50) NOT NULL,
           seller JSON,
+          buyer JSON,
+          min_count INT NOT NULL,
           count INT NOT NULL,
           createAt TIMESTAMP NOT NULL DEFAULT NOW(),
           updateAt TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -54,6 +61,35 @@ export async function initializeDatabase() {
   `;
 
   await pool.query(createSoldProductTableQuery);
+
+  const createUsersTableQuery = `
+    CREATE TABLE IF NOT EXISTS
+      users (
+          object_id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(50) NOT NULL,
+          number VARCHAR(50) NOT NULL,
+          password VARCHAR(50) NOT NULL,
+          user_code VARCHAR(50) NOT NULL,
+          role VARCHAR(50) NOT NULL,
+          createAt TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+  `;
+
+  await pool.query(createUsersTableQuery);
+
+  const createBuyersTableQuery = `
+    CREATE TABLE IF NOT EXISTS
+      buyers (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(50) NOT NULL,
+          number VARCHAR(50) NOT NULL,
+          address VARCHAR(50) NOT NULL,
+          type VARCHAR(50) NOT NULL,
+          createAt TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+  `;
+
+  await pool.query(createBuyersTableQuery);
 }
 
 export async function getProducts() {
@@ -87,6 +123,9 @@ export async function createProduct(
   warehouse_code,
   product_code,
   product_name,
+  product_category,
+  product_unit,
+  min_count,
   count,
   buy_price,
   sell_price,
@@ -101,6 +140,9 @@ export async function createProduct(
           warehouse_code,
           product_code,
           product_name,
+          product_category,
+          product_unit,
+          min_count,
           count,
           buy_price,
           sell_price,
@@ -109,7 +151,9 @@ export async function createProduct(
           updateAt
         )
     VALUES (
-      ?, ?, ?, ?, ?, ?, 
+      ?, ?, ?, 
+      JSON_OBJECT('code', ?, 'name', ?), 
+      ?, ?, ?, ?, ?, 
       JSON_OBJECT('name', ?, 'phone', ?, 'user_code', ?), 
       ?, ?
     )
@@ -118,6 +162,10 @@ export async function createProduct(
       warehouse_code,
       product_code,
       product_name,
+      product_category.code,
+      product_category.name,
+      product_unit,
+      min_count,
       count,
       buy_price,
       sell_price,
@@ -196,10 +244,13 @@ export async function sellProduct(
   warehouse_code,
   product_code,
   product_name,
+  product_unit,
   buy_price,
   sell_price,
   seller,
+  buyer,
   count,
+  min_count,
   createAt,
   updateAt,
   soldAt
@@ -210,28 +261,38 @@ export async function sellProduct(
     warehouse_code,
     product_code,
     product_name,
+    product_unit,
     buy_price,
     sell_price,
     seller,
+    buyer,
     count,
+    min_count,
     createAt,
     updateAt,
     soldAt
   ) VALUES (
-    ?, ?, ?, ?, ?, 
+    ?, ?, ?, ?, ?, ?, 
     JSON_OBJECT('name', ?, 'phone', ?, 'user_code', ?), 
-    ?, ?, ?, ?
+    JSON_OBJECT('name', ?, 'number', ?, 'address', ?, 'type', ?), 
+    ?, ?, ?, ?, ?
   )`,
     [
       warehouse_code,
       product_code,
       product_name,
+      product_unit,
       buy_price,
       sell_price,
       seller.name,
       seller.phone,
       seller.user_code,
+      buyer.name,
+      buyer.number,
+      buyer.address,
+      buyer.type,
       count,
+      min_count,
       createAt,
       updateAt,
       soldAt,
@@ -269,6 +330,31 @@ export async function addUser(name, number, password, user_code, role) {
   );
 
   return result;
+}
+
+export async function addBuyer(name, number, address, type) {
+  const [result] = await pool.query(
+    `
+    INSERT INTO
+        buyers (
+          name,
+          number,
+          address,
+          type
+        )
+    VALUES (
+      ?, ?, ?, ?
+    )
+  `,
+    [name, number, address, type]
+  );
+
+  return result;
+}
+
+export async function getBuyers() {
+  const [rows] = await pool.query(`SELECT * FROM buyers`);
+  return rows;
 }
 
 export async function updateUser(name, number, password, user_code, role) {
