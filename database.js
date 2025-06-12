@@ -52,6 +52,7 @@ export async function initializeDatabase() {
           sell_price VARCHAR(50) NOT NULL,
           seller JSON,
           buyer JSON,
+          paymentDetails JSON,
           min_count INT NOT NULL,
           count INT NOT NULL,
           createAt TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -249,6 +250,7 @@ export async function sellProduct(
   sell_price,
   seller,
   buyer,
+  paymentDetails,
   count,
   min_count,
   createAt,
@@ -266,6 +268,7 @@ export async function sellProduct(
     sell_price,
     seller,
     buyer,
+    paymentDetails,
     count,
     min_count,
     createAt,
@@ -275,6 +278,7 @@ export async function sellProduct(
     ?, ?, ?, ?, ?, ?, 
     JSON_OBJECT('name', ?, 'phone', ?, 'user_code', ?), 
     JSON_OBJECT('name', ?, 'number', ?, 'address', ?, 'type', ?), 
+    JSON_OBJECT('payMethod', ?, 'confirmerCode', ?, 'settlement', ?, 'desc', ?, 'discountPrice', ?), 
     ?, ?, ?, ?, ?
   )`,
     [
@@ -291,6 +295,11 @@ export async function sellProduct(
       buyer.number,
       buyer.address,
       buyer.type,
+      paymentDetails.payMethod,
+      paymentDetails.confirmerCode,
+      paymentDetails.settlement,
+      paymentDetails.desc,
+      paymentDetails.discountPrice,
       count,
       min_count,
       createAt,
@@ -304,6 +313,23 @@ export async function sellProduct(
   } else {
     return { message: "sale record was not added" };
   }
+}
+
+export async function updatePaymentDetails(desc, settlement, id) {
+  const [result] = await pool.query(
+    `
+    UPDATE sold_product
+    SET paymentDetails = JSON_SET(
+        paymentDetails,
+        '$.desc', ?,
+        '$.settlement', ?
+    )
+    WHERE object_id = ?;
+  `,
+    [desc, settlement, id]
+  );
+
+  return result;
 }
 
 export async function getUsers() {

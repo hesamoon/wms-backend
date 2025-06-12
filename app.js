@@ -19,6 +19,7 @@ import {
   removeUser,
   addBuyer,
   getBuyers,
+  updatePaymentDetails,
 } from "./database.js";
 
 const app = express();
@@ -148,6 +149,26 @@ app.post("/updateProduct", async (req, res) => {
   res.status(201).send(updatedProduct);
 });
 
+app.post("/updatePaymentDetails", async (req, res) => {
+  const { desc, settlement, id } = req.body;
+
+  const updatedPaymentDetails = await updatePaymentDetails(
+    desc,
+    settlement,
+    id
+  );
+
+  if (updatedPaymentDetails.affectedRows > 0) {
+    res
+      .status(201)
+      .send({ success: true, message: "بروزرسانی اطلاعات با موفقیت انجام شد" });
+  } else {
+    res
+      .status(201)
+      .send({ success: false, message: "بروزرسانی اطلاعات انجام نشد" });
+  }
+});
+
 app.post("/removeProduct", async (req, res) => {
   const { product_code } = req.body;
 
@@ -168,6 +189,7 @@ app.post("/sellProduct", async (req, res) => {
     buyer,
     count,
     min_count,
+    paymentDetails,
   } = req.body;
 
   const sellProductRes = await sellProduct(
@@ -179,6 +201,7 @@ app.post("/sellProduct", async (req, res) => {
     sell_price,
     seller,
     buyer,
+    paymentDetails,
     count,
     min_count,
     new Date(),
