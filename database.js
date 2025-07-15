@@ -408,11 +408,11 @@ export async function updateUser(name, number, password, user_code, role) {
       user_code = ?,
       role = ?
     WHERE 
-      user_code = ? AND 
       number = ?;
   `,
-    [name, number, password, user_code, role, user_code, number]
+    [name, number, password, user_code, role, number]
   );
+
   return getUser(number, password);
 }
 
