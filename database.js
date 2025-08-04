@@ -57,6 +57,7 @@ export async function initializeDatabase() {
           paymentDetails JSON,
           min_count INT NOT NULL,
           count INT NOT NULL,
+          sold_price VARCHAR(50) NOT NULL,
           createAt TIMESTAMP NOT NULL DEFAULT NOW(),
           updateAt TIMESTAMP NOT NULL DEFAULT NOW(),
           soldAt TIMESTAMP NOT NULL DEFAULT NOW()
@@ -93,6 +94,19 @@ export async function initializeDatabase() {
   `;
 
   await pool.query(createBuyersTableQuery);
+
+  const createCategoriesTableQuery = `
+    CREATE TABLE IF NOT EXISTS
+      categories (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          code VARCHAR(50) NOT NULL UNIQUE,
+          name VARCHAR(100) NOT NULL,
+          createAt TIMESTAMP NOT NULL DEFAULT NOW(),
+          updateAt TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP
+      )
+  `;
+
+  await pool.query(createCategoriesTableQuery);
 }
 
 export async function getProducts() {
@@ -259,6 +273,7 @@ export async function sellProduct(
   buyer,
   paymentDetails,
   count,
+  soldPrice,
   min_count,
   createAt,
   updateAt,
@@ -279,6 +294,7 @@ export async function sellProduct(
     buyer,
     paymentDetails,
     count,
+    sold_price,
     min_count,
     createAt,
     updateAt,
@@ -290,7 +306,7 @@ export async function sellProduct(
     JSON_OBJECT('name', ?, 'phone', ?, 'user_code', ?), 
     JSON_OBJECT('name', ?, 'number', ?, 'address', ?, 'type', ?), 
     JSON_OBJECT('payMethod', ?, 'confirmerCode', ?, 'settlement', ?, 'desc', ?, 'discountPrice', ?), 
-    ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?
   )`,
     [
       warehouse_code,
@@ -315,6 +331,7 @@ export async function sellProduct(
       paymentDetails.desc,
       paymentDetails.discountPrice,
       count,
+      soldPrice,
       min_count,
       createAt,
       updateAt,
@@ -445,6 +462,57 @@ export async function verifyUser(number, password) {
     [number, password]
   );
   return rows;
+}
+
+// Categories functions
+export async function getCategories() {
+  const [rows] = await pool.query(
+    `SELECT * FROM categories ORDER BY createAt DESC`
+  );
+  return rows;
+}
+
+export async function getCategory(code) {
+  const [rows] = await pool.query(
+    `SELECT * FROM categories WHERE code = ?`,
+    [code]
+  );
+  return rows[0];
+}
+
+export async function createCategory(code, name) {
+  const [result] = await pool.query(
+    `INSERT INTO categories (code, name) VALUES (?, ?)`,
+    [code, name]
+  );
+
+  if (result.affectedRows > 0) {
+    return getCategory(code);
+  } else {
+    return { message: "Category with this code already exists!" };
+  }
+}
+
+export async function updateCategory(code, name) {
+  const [result] = await pool.query(
+    `UPDATE categories SET name = ? WHERE code = ?`,
+    [name, code]
+  );
+
+  if (result.affectedRows > 0) {
+    return getCategory(code);
+  } else {
+    return { message: "Category not found!" };
+  }
+}
+
+export async function removeCategory(code) {
+  const [result] = await pool.query(
+    `DELETE FROM categories WHERE code = ?`,
+    [code]
+  );
+
+  return { ...result, code };
 }
 
 // const notes = await getNotes();

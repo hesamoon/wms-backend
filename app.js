@@ -20,6 +20,11 @@ import {
   addBuyer,
   getBuyers,
   updatePaymentDetails,
+  getCategories,
+  getCategory,
+  createCategory,
+  updateCategory,
+  removeCategory,
 } from "./database.js";
 
 const app = express();
@@ -192,6 +197,7 @@ app.post("/sellProduct", async (req, res) => {
     seller,
     buyer,
     count,
+    soldPrice,
     min_count,
     paymentDetails,
   } = req.body;
@@ -209,6 +215,7 @@ app.post("/sellProduct", async (req, res) => {
     buyer,
     paymentDetails,
     count,
+    soldPrice,
     min_count,
     new Date(),
     new Date(),
@@ -241,6 +248,50 @@ app.post("/login", async (req, res) => {
     return res.json({ status: "Success", token });
   }
   return res.json({ status: "No Record" });
+});
+
+// Categories routes
+app.get("/getCategories", async (req, res) => {
+  const categories = await getCategories();
+  res.send(categories);
+});
+
+app.get("/getCategory/:code", async (req, res) => {
+  const code = req.params.code;
+  const category = await getCategory(code);
+  if (category) {
+    res.send(category);
+  } else {
+    res.status(404).send({ message: "Category not found" });
+  }
+});
+
+app.post("/createCategory", async (req, res) => {
+  const { code, name } = req.body;
+  const newCategory = await createCategory(code, name);
+  
+  if (newCategory?.message) {
+    res.status(406).send(newCategory);
+  } else {
+    res.status(201).send(newCategory);
+  }
+});
+
+app.post("/updateCategory", async (req, res) => {
+  const { code, name } = req.body;
+  const updatedCategory = await updateCategory(code, name);
+  
+  if (updatedCategory?.message) {
+    res.status(404).send(updatedCategory);
+  } else {
+    res.status(200).send(updatedCategory);
+  }
+});
+
+app.post("/removeCategory", async (req, res) => {
+  const { code } = req.body;
+  const removedCategory = await removeCategory(code);
+  res.status(200).send(removedCategory);
 });
 
 app.use((err, req, res, next) => {
