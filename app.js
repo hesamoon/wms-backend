@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import {
   getProduct,
   getProducts,
+  getProductsByCategory,
   getSoldProducts,
   createProduct,
   updateProduct,
@@ -25,6 +26,11 @@ import {
   createCategory,
   updateCategory,
   removeCategory,
+  getTowers,
+  getTower,
+  createTower,
+  updateTower,
+  removeTower,
 } from "./database.js";
 
 const app = express();
@@ -50,6 +56,12 @@ app.get("/getProduct/:id", async (req, res) => {
   const id = req.params.id;
   const product = await getProduct(id);
   res.send(product);
+});
+
+app.get("/getProductsByCategory/:categoryCode", async (req, res) => {
+  const categoryCode = req.params.categoryCode;
+  const products = await getProductsByCategory(categoryCode);
+  res.send(products);
 });
 
 app.get("/getSoldProducts", async (req, res) => {
@@ -269,7 +281,7 @@ app.get("/getCategory/:code", async (req, res) => {
 app.post("/createCategory", async (req, res) => {
   const { code, name } = req.body;
   const newCategory = await createCategory(code, name);
-  
+
   if (newCategory?.message) {
     res.status(406).send(newCategory);
   } else {
@@ -280,7 +292,7 @@ app.post("/createCategory", async (req, res) => {
 app.post("/updateCategory", async (req, res) => {
   const { code, name } = req.body;
   const updatedCategory = await updateCategory(code, name);
-  
+
   if (updatedCategory?.message) {
     res.status(404).send(updatedCategory);
   } else {
@@ -292,6 +304,50 @@ app.post("/removeCategory", async (req, res) => {
   const { code } = req.body;
   const removedCategory = await removeCategory(code);
   res.status(200).send(removedCategory);
+});
+
+// Tower routes
+app.get("/getTowers", async (req, res) => {
+  const towers = await getTowers();
+  res.send(towers);
+});
+
+app.get("/getTower/:id", async (req, res) => {
+  const id = req.params.id;
+  const tower = await getTower(id);
+  if (tower) {
+    res.send(tower);
+  } else {
+    res.status(404).send({ message: "Tower not found" });
+  }
+});
+
+app.post("/createTower", async (req, res) => {
+  const { name, size } = req.body;
+  const newTower = await createTower(name, size);
+
+  if (newTower?.message) {
+    res.status(406).send(newTower);
+  } else {
+    res.status(201).send(newTower);
+  }
+});
+
+app.post("/updateTower", async (req, res) => {
+  const { name, size, id } = req.body;
+  const updatedTower = await updateTower(name, size,id);
+
+  if (updatedTower?.message) {
+    res.status(404).send(updatedTower);
+  } else {
+    res.status(200).send(updatedTower);
+  }
+});
+
+app.post("/removeTower", async (req, res) => {
+  const { object_id } = req.body;
+  const removedTower = await removeTower(object_id);
+  res.status(200).send(removedTower);
 });
 
 app.use((err, req, res, next) => {

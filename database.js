@@ -18,6 +18,7 @@ export async function initializeDatabase() {
   );
   await pool.query(`USE ${process.env.MYSQL_DATABASE}`);
 
+  // products table
   const createProductTableQuery = `
     CREATE TABLE IF NOT EXISTS
       product (
@@ -37,9 +38,9 @@ export async function initializeDatabase() {
           updateAt TIMESTAMP NOT NULL DEFAULT NOW()
       )
   `;
-
   await pool.query(createProductTableQuery);
 
+  // sold products table
   const createSoldProductTableQuery = `
     CREATE TABLE IF NOT EXISTS
       sold_product (
@@ -63,9 +64,9 @@ export async function initializeDatabase() {
           soldAt TIMESTAMP NOT NULL DEFAULT NOW()
       )
   `;
-
   await pool.query(createSoldProductTableQuery);
 
+  // users table
   const createUsersTableQuery = `
     CREATE TABLE IF NOT EXISTS
       users (
@@ -78,9 +79,9 @@ export async function initializeDatabase() {
           createAt TIMESTAMP NOT NULL DEFAULT NOW()
       )
   `;
-
   await pool.query(createUsersTableQuery);
 
+  // buyers table
   const createBuyersTableQuery = `
     CREATE TABLE IF NOT EXISTS
       buyers (
@@ -92,9 +93,9 @@ export async function initializeDatabase() {
           createAt TIMESTAMP NOT NULL DEFAULT NOW()
       )
   `;
-
   await pool.query(createBuyersTableQuery);
 
+  // categories table
   const createCategoriesTableQuery = `
     CREATE TABLE IF NOT EXISTS
       categories (
@@ -105,12 +106,31 @@ export async function initializeDatabase() {
           updateAt TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP
       )
   `;
-
   await pool.query(createCategoriesTableQuery);
+
+  // tower table
+  const createTowerTableQuery = `
+    CREATE TABLE IF NOT EXISTS
+      tower (
+          object_id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(50) NOT NULL,
+          size VARCHAR(50) NOT NULL,
+          createAt TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+  `;
+  await pool.query(createTowerTableQuery);
 }
 
 export async function getProducts() {
   const [rows] = await pool.query(`SELECT * FROM product`);
+  return rows;
+}
+
+export async function getProductsByCategory(categoryCode) {
+  const [rows] = await pool.query(
+    `SELECT * FROM product WHERE JSON_EXTRACT(product_category, '$.code') = ?`,
+    [categoryCode]
+  );
   return rows;
 }
 
@@ -473,10 +493,9 @@ export async function getCategories() {
 }
 
 export async function getCategory(code) {
-  const [rows] = await pool.query(
-    `SELECT * FROM categories WHERE code = ?`,
-    [code]
-  );
+  const [rows] = await pool.query(`SELECT * FROM categories WHERE code = ?`, [
+    code,
+  ]);
   return rows[0];
 }
 
@@ -507,12 +526,58 @@ export async function updateCategory(code, name) {
 }
 
 export async function removeCategory(code) {
-  const [result] = await pool.query(
-    `DELETE FROM categories WHERE code = ?`,
-    [code]
-  );
+  const [result] = await pool.query(`DELETE FROM categories WHERE code = ?`, [
+    code,
+  ]);
 
   return { ...result, code };
+}
+
+// tower functions
+export async function getTowers() {
+  const [rows] = await pool.query(`SELECT * FROM tower ORDER BY createAt DESC`);
+  return rows;
+}
+
+export async function getTower(id) {
+  const [rows] = await pool.query(`SELECT * FROM tower WHERE object_id = ?`, [
+    id,
+  ]);
+  return rows[0];
+}
+
+export async function createTower(name, size) {
+  const [result] = await pool.query(
+    `INSERT INTO tower (name, size) VALUES (?, ?)`,
+    [name, size]
+  );
+
+  if (result.affectedRows > 0) {
+    return getTower(result.insertId);
+  } else {
+    return { message: "Tower with this id already exists!" };
+  }
+}
+
+export async function updateTower(name, size, id) {
+  const [result] = await pool.query(
+    `UPDATE tower SET name = ?, size = ? WHERE object_id = ?`,
+    [name, size, id]
+  );
+
+  if (result.affectedRows > 0) {
+    return getTower(result.insertId);
+  } else {
+    return { message: "Tower not found!" };
+  }
+}
+
+export async function removeTower(id) {
+  const [result] = await pool.query(`DELETE FROM tower WHERE object_id = ?`, [
+    id,
+  ]);
+
+  return { ...result, id };
 }
 
 // const notes = await getNotes();
