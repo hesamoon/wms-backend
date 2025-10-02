@@ -29,6 +29,7 @@ export async function initializeDatabase() {
           product_category JSON,
           product_unit VARCHAR(50) NOT NULL,
           price_unit VARCHAR(50) NOT NULL,
+          rental_costs VARCHAR(50) NOT NULL,
           buy_price VARCHAR(50) NOT NULL,
           sell_price VARCHAR(50) NOT NULL,
           seller JSON,
@@ -119,6 +120,21 @@ export async function initializeDatabase() {
       )
   `;
   await pool.query(createTowerTableQuery);
+
+  // equipment table
+  const createEquipmentTableQuery = `
+    CREATE TABLE IF NOT EXISTS
+      equipment (
+          object_id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(50) NOT NULL,
+          model VARCHAR(50) NOT NULL,
+          serial_number VARCHAR(50) NOT NULL,
+          storage_location VARCHAR(50) NOT NULL,
+          qty INT NOT NULL,
+          createAt TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+  `;
+  await pool.query(createEquipmentTableQuery);
 }
 
 export async function getProducts() {
@@ -165,6 +181,7 @@ export async function createProduct(
   price_unit,
   min_count,
   count,
+  rental_costs,
   buy_price,
   sell_price,
   seller,
@@ -183,6 +200,7 @@ export async function createProduct(
           price_unit,
           min_count,
           count,
+          rental_costs,
           buy_price,
           sell_price,
           seller,
@@ -192,7 +210,7 @@ export async function createProduct(
     VALUES (
       ?, ?, ?, 
       JSON_OBJECT('code', ?, 'name', ?), 
-      ?, ?, ?, ?, ?, ?, 
+      ?, ?, ?, ?, ?, ?, ?, 
       JSON_OBJECT('name', ?, 'phone', ?, 'user_code', ?), 
       ?, ?
     )
@@ -207,6 +225,7 @@ export async function createProduct(
       price_unit,
       min_count,
       count,
+      rental_costs,
       buy_price,
       sell_price,
       seller.name,
@@ -574,6 +593,66 @@ export async function updateTower(name, size, id) {
 
 export async function removeTower(id) {
   const [result] = await pool.query(`DELETE FROM tower WHERE object_id = ?`, [
+    id,
+  ]);
+
+  return { ...result, id };
+}
+
+// equipment functions
+export async function getEquipments() {
+  const [rows] = await pool.query(`SELECT * FROM equipment ORDER BY createAt DESC`);
+  return rows;
+}
+
+export async function getEquipment(id) {
+  const [rows] = await pool.query(`SELECT * FROM equipment WHERE object_id = ?`, [
+    id,
+  ]);
+  return rows[0];
+}
+
+export async function createEquipment(
+  name,
+  model,
+  serial_number,
+  storage_location,
+  qty
+) {
+  const [result] = await pool.query(
+    `INSERT INTO equipment (name, model, serial_number, storage_location, qty) VALUES (?, ?, ?, ?, ?)`,
+    [name, model, serial_number, storage_location, qty]
+  );
+
+  if (result.affectedRows > 0) {
+    return getEquipment(result.insertId);
+  } else {
+    return { message: "Equipment with this id already exists!" };
+  }
+}
+
+export async function updateEquipment(
+  name,
+  model,
+  serial_number,
+  storage_location,
+  qty,
+  id
+) {
+  const [result] = await pool.query(
+    `UPDATE equipment SET name = ?, model = ?, serial_number = ?, storage_location = ?, qty = ? WHERE object_id = ?`,
+    [name, model, serial_number, storage_location, qty, id]
+  );
+
+  if (result.affectedRows > 0) {
+    return getEquipment(id);
+  } else {
+    return { message: "Equipment not found!" };
+  }
+}
+
+export async function removeEquipment(id) {
+  const [result] = await pool.query(`DELETE FROM equipment WHERE object_id = ?`, [
     id,
   ]);
 

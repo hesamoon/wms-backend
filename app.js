@@ -31,6 +31,11 @@ import {
   createTower,
   updateTower,
   removeTower,
+  getEquipments,
+  getEquipment,
+  createEquipment,
+  updateEquipment,
+  removeEquipment,
 } from "./database.js";
 
 const app = express();
@@ -115,6 +120,7 @@ app.post("/createProduct", async (req, res) => {
     priceUnit,
     minQty,
     qty,
+    rentalCosts,
     buyPrice,
     sellPrice,
     seller,
@@ -129,6 +135,7 @@ app.post("/createProduct", async (req, res) => {
     priceUnit,
     minQty,
     qty,
+    rentalCosts,
     buyPrice,
     sellPrice,
     seller,
@@ -335,7 +342,7 @@ app.post("/createTower", async (req, res) => {
 
 app.post("/updateTower", async (req, res) => {
   const { name, size, id } = req.body;
-  const updatedTower = await updateTower(name, size,id);
+  const updatedTower = await updateTower(name, size, id);
 
   if (updatedTower?.message) {
     res.status(404).send(updatedTower);
@@ -348,6 +355,63 @@ app.post("/removeTower", async (req, res) => {
   const { object_id } = req.body;
   const removedTower = await removeTower(object_id);
   res.status(200).send(removedTower);
+});
+
+// Equipment routes
+app.get("/getEquipments", async (req, res) => {
+  const equipments = await getEquipments();
+  res.send(equipments);
+});
+
+app.get("/getEquipment/:id", async (req, res) => {
+  const id = req.params.id;
+  const equipment = await getEquipment(id);
+  if (equipment) {
+    res.send(equipment);
+  } else {
+    res.status(404).send({ message: "Equipment not found" });
+  }
+});
+
+app.post("/createEquipment", async (req, res) => {
+  const { name, model, serialNumber, storageLocation, qty } = req.body;
+  const newEquipment = await createEquipment(
+    name,
+    model,
+    serialNumber,
+    storageLocation,
+    qty
+  );
+
+  if (newEquipment?.message) {
+    res.status(406).send(newEquipment);
+  } else {
+    res.status(201).send(newEquipment);
+  }
+});
+
+app.post("/updateEquipment", async (req, res) => {
+  const { name, model, serialNumber, storageLocation, qty, id } = req.body;
+  const updatedEquipment = await updateEquipment(
+    name,
+    model,
+    serialNumber,
+    storageLocation,
+    qty,
+    id
+  );
+
+  if (updatedEquipment?.message) {
+    res.status(404).send(updatedEquipment);
+  } else {
+    res.status(200).send(updatedEquipment);
+  }
+});
+
+app.post("/removeEquipment", async (req, res) => {
+  const { object_id } = req.body;
+  const removedEquipment = await removeEquipment(object_id);
+  res.status(200).send(removedEquipment);
 });
 
 app.use((err, req, res, next) => {
